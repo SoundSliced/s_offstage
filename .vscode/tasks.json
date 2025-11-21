@@ -1,0 +1,10 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "commit-changes",
+			"type": "shell",
+			"command": "git add . && git commit -m \"Prepare s_offstage package for publication - add LICENSE, example, tests, and update documentation\""
+		}
+	]
+}

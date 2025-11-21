@@ -1,6 +1,6 @@
-/// myOffstage package
+/// s_offstage package
 ///
-/// This library exports all public APIs for the myOffstage package.
-library s_offstage;
+/// This library exports all public APIs for the s_offstage package.
+library;
 
 export 'src/my_offstage.dart';

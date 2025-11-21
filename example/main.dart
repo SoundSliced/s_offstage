@@ -1,40 +1,3 @@
-
-# s_offstage
-
-A Flutter package for smooth loading/content transitions and content hiding/reveal widgets.
-
-
-## Installation
-
-Add this to your package's `pubspec.yaml` file:
-
-```yaml
-dependencies:
-  s_offstage:
-    path: ../my_extensions/s_offstage
-```
-
-
-## Usage
-
-Import the package:
-
-```dart
-import 'package:s_offstage/s_offstage.dart';
-```
-
-### Example
-
-```dart
-SOffstage(
-  isOffstage: isLoading,
-  child: YourContentWidget(),
-)
-```
-
-See [`example/main.dart`](example/main.dart) for a complete runnable example:
-
-```dart
 import 'package:flutter/material.dart';
 import 'package:s_offstage/s_offstage.dart';
 
@@ -92,22 +55,3 @@ class _ExampleHomeState extends State<ExampleHome> {
     );
   }
 }
-```
-
-
-## Features
-
-- `SOffstage` widget: Smooth fade transitions between loading and content
-- Customizable loading indicator (default or custom widget)
-- Performance-optimized with Offstage and AnimatedOpacity
-- `HiddenContent` widget: Hide/reveal content with optional force reveal and custom indicator
-
-
-## License
-
-MIT License. See [LICENSE](LICENSE) for details.
-
-
-## Repository
-
-https://github.com/SoundSliced/s_offstage
