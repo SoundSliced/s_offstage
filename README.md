@@ -10,8 +10,7 @@ Add this to your package's `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-  s_offstage:
-    path: ../my_extensions/s_offstage
+  s_offstage: ^1.0.1
 ```
 
 
