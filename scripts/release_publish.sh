@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-# Always run from the project root (parent of scripts/)
-cd "$(dirname "$0")/.."
 set -euo pipefail
 
 # Combined Release and Publishing Script for Flutter/Dart Packages
@@ -720,6 +718,9 @@ main() {
     echo "========================================"
     echo "Flutter Package Release & Publish Script"
     echo "========================================"
+
+    # Ensure the directory is a Git repository
+    ensure_git_repo
 
     # Get package info
     get_package_info
