@@ -1,8 +1,32 @@
 
 # s_offstage
 
-A Flutter package for smooth loading/content transitions and content hiding/reveal widgets.
+A Flutter package that provides smooth animated transitions for showing and hiding widgets using the `Offstage` widget. Unlike the `Visibility` widget which can hide widgets but still reserves their space, `SOffstage` completely removes widgets from the layout using `Offstage`, ensuring they take up no space and consume no resources when hidden.
 
+## Key Features
+
+- **Performance-optimized**: Uses `Offstage` to completely remove hidden widgets from the render tree
+- **Multiple transition types**: Fade, scale, slide, rotation, or combinations
+- **Smooth animations**: Automatically animates opacity and other effects when transitioning
+- **Advanced animation control**: Custom curves, delays, and completion callbacks
+- **Alternative to Visibility**: Provides similar functionality to `Visibility` but with smooth transitions
+- **Customizable**: Optional loading indicators with conditional display
+- **Zero layout space**: Hidden widgets take up no space in the layout (unlike `Opacity` alone)
+- **State callbacks**: Track visibility changes and animation completion
+
+## How it works
+
+`SOffstage` combines the best of both worlds:
+
+1. When hiding a widget (`isOffstage: true`):
+   - Smoothly animates the opacity from 1.0 to 0.0
+   - Places the widget offstage (removed from render tree, takes no space)
+   - Optionally shows a loading indicator
+
+2. When revealing a widget (`isOffstage: false`):
+   - Brings the widget back from offstage
+   - Smoothly animates the opacity from 0.0 to 1.0
+   - Hides the loading indicator
 
 ## Installation
 
@@ -10,7 +34,7 @@ Add this to your package's `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-  s_offstage: ^1.0.1
+  s_offstage: ^1.1.0
 ```
 
 
@@ -22,12 +46,123 @@ Import the package:
 import 'package:s_offstage/s_offstage.dart';
 ```
 
-### Example
+### Basic Example
 
 ```dart
 SOffstage(
   isOffstage: isLoading,
   child: YourContentWidget(),
+)
+```
+
+### Transition Types
+
+Choose from multiple transition effects:
+
+```dart
+// Fade only
+SOffstage(
+  isOffstage: isLoading,
+  transition: SOffstageTransition.fade,
+  child: YourContentWidget(),
+)
+
+// Scale only
+SOffstage(
+  isOffstage: isLoading,
+  transition: SOffstageTransition.scale,
+  child: YourContentWidget(),
+)
+
+// Fade and Scale (default)
+SOffstage(
+  isOffstage: isLoading,
+  transition: SOffstageTransition.fadeAndScale,
+  child: YourContentWidget(),
+)
+
+// Slide with fade
+SOffstage(
+  isOffstage: isLoading,
+  transition: SOffstageTransition.slide,
+  slideDirection: AxisDirection.up,
+  slideOffset: 0.5,
+  child: YourContentWidget(),
+)
+
+// Rotation with fade
+SOffstage(
+  isOffstage: isLoading,
+  transition: SOffstageTransition.rotation,
+  child: YourContentWidget(),
+)
+```
+
+### Advanced Animation Control
+
+```dart
+SOffstage(
+  isOffstage: isLoading,
+  // Custom animation curves
+  fadeInCurve: Curves.easeOut,
+  fadeOutCurve: Curves.easeIn,
+  scaleCurve: Curves.elasticOut,
+  
+  // Animation duration
+  fadeDuration: Duration(milliseconds: 500),
+  
+  // Delay before transitions
+  delayBeforeShow: Duration(milliseconds: 100),
+  delayBeforeHide: Duration(milliseconds: 50),
+  
+  child: YourContentWidget(),
+)
+```
+
+### Callbacks
+
+```dart
+SOffstage(
+  isOffstage: isLoading,
+  // Called when visibility state changes
+  onOffstageStateChanged: (isOffstage) {
+    print('Widget is now ${isOffstage ? 'hidden' : 'visible'}');
+  },
+  // Called when animation completes
+  onAnimationComplete: (isOffstage) {
+    print('Animation finished: ${isOffstage ? 'hidden' : 'visible'}');
+    // Chain other actions here
+  },
+  child: YourContentWidget(),
+)
+```
+
+### Conditional Loading Indicator
+
+Prevent loading indicator flash for quick transitions:
+
+```dart
+SOffstage(
+  isOffstage: isLoading,
+  // Only show loading indicator if loading takes longer than 300ms
+  showLoadingAfter: Duration(milliseconds: 300),
+  loadingIndicator: CircularProgressIndicator(
+    color: Colors.blue,
+  ),
+  child: YourContentWidget(),
+)
+```
+
+### State Management Options
+
+```dart
+SOffstage(
+  isOffstage: isLoading,
+  // Preserve widget state when hidden
+  maintainState: true,
+  // Keep animations running when hidden
+  maintainAnimation: true,
+  child: YourStatefulWidget(),
 )
 ```
 
@@ -94,12 +229,50 @@ class _ExampleHomeState extends State<ExampleHome> {
 ```
 
 
-## Features
+## API Reference
 
-- `SOffstage` widget: Smooth fade transitions between loading and content
-- Customizable loading indicator (default or custom widget)
-- Performance-optimized with Offstage and AnimatedOpacity
-- `HiddenContent` widget: Hide/reveal content with optional force reveal and custom indicator
+### SOffstage Parameters
+
+#### Required
+- `isOffstage`: Controls the visibility and loading state
+- `child`: The widget to show/hide
+
+#### Animation
+- `fadeDuration`: Duration of animations (default: 400ms)
+- `fadeInCurve`: Curve for fade-in animation (default: Curves.easeInOut)
+- `fadeOutCurve`: Curve for fade-out animation (default: Curves.easeInOut)
+- `scaleCurve`: Curve for scale animation (default: Curves.fastEaseInToSlowEaseOut)
+- `transition`: Type of transition effect (default: SOffstageTransition.fadeAndScale)
+- `slideDirection`: Direction for slide transitions (default: AxisDirection.down)
+- `slideOffset`: Offset multiplier for slides (default: 0.3)
+
+#### Timing
+- `delayBeforeShow`: Delay before revealing content (default: Duration.zero)
+- `delayBeforeHide`: Delay before hiding content (default: Duration.zero)
+- `showLoadingAfter`: Delay before showing loading indicator (default: Duration.zero)
+
+#### Loading Indicator
+- `showLoadingIndicator`: Whether to show loading indicator (default: true)
+- `loadingIndicator`: Custom loading indicator widget (optional)
+
+#### State Management
+- `maintainState`: Preserve widget state when offstage (default: false)
+- `maintainAnimation`: Keep animations running when offstage (default: false)
+
+#### Callbacks
+- `onOffstageStateChanged`: Called when visibility state changes
+- `onAnimationComplete`: Called when transition animation completes
+
+### SOffstageTransition Enum
+- `SOffstageTransition.fade`: Opacity animation only
+- `SOffstageTransition.scale`: Scale animation only
+- `SOffstageTransition.fadeAndScale`: Both fade and scale (default)
+- `SOffstageTransition.slide`: Slide with fade
+- `SOffstageTransition.rotation`: Rotation with fade
+
+### Additional Widgets
+
+- `HiddenContent`: A specialized widget for hiding/revealing content with optional force reveal functionality and custom indicators
 
 
 ## License

@@ -28,4 +28,307 @@ void main() {
     );
     expect(find.text('Hidden'), findsNothing);
   });
+
+  testWidgets('SOffstage triggers callback when state changes',
+      (WidgetTester tester) async {
+    bool? callbackValue;
+    int callbackCount = 0;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: StatefulBuilder(
+          builder: (context, setState) {
+            return SOffstage(
+              isOffstage: false,
+              onOffstageStateChanged: (isOffstage) {
+                callbackValue = isOffstage;
+                callbackCount++;
+              },
+              child: const Text('Test'),
+            );
+          },
+        ),
+      ),
+    );
+
+    // Initial state - no callback should be triggered yet
+    expect(callbackCount, 0);
+    expect(callbackValue, isNull);
+
+    // Change to offstage
+    await tester.pumpWidget(
+      MaterialApp(
+        home: StatefulBuilder(
+          builder: (context, setState) {
+            return SOffstage(
+              isOffstage: true,
+              onOffstageStateChanged: (isOffstage) {
+                callbackValue = isOffstage;
+                callbackCount++;
+              },
+              child: const Text('Test'),
+            );
+          },
+        ),
+      ),
+    );
+
+    // Callback should be triggered with true
+    expect(callbackCount, 1);
+    expect(callbackValue, true);
+
+    // Change back to visible
+    await tester.pumpWidget(
+      MaterialApp(
+        home: StatefulBuilder(
+          builder: (context, setState) {
+            return SOffstage(
+              isOffstage: false,
+              onOffstageStateChanged: (isOffstage) {
+                callbackValue = isOffstage;
+                callbackCount++;
+              },
+              child: const Text('Test'),
+            );
+          },
+        ),
+      ),
+    );
+
+    // Callback should be triggered again with false
+    expect(callbackCount, 2);
+    expect(callbackValue, false);
+  });
+
+  testWidgets('SOffstage does not trigger callback when state stays the same',
+      (WidgetTester tester) async {
+    int callbackCount = 0;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SOffstage(
+          isOffstage: false,
+          onOffstageStateChanged: (isOffstage) {
+            callbackCount++;
+          },
+          child: const Text('Test'),
+        ),
+      ),
+    );
+
+    expect(callbackCount, 0);
+
+    // Rebuild with same state
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SOffstage(
+          isOffstage: false,
+          onOffstageStateChanged: (isOffstage) {
+            callbackCount++;
+          },
+          child: const Text('Test'),
+        ),
+      ),
+    );
+
+    // Callback should not be triggered
+    expect(callbackCount, 0);
+  });
+
+  testWidgets('SOffstage triggers animation complete callback',
+      (WidgetTester tester) async {
+    bool? animationCompleteValue;
+    int completeCallbackCount = 0;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SOffstage(
+          isOffstage: false,
+          fadeDuration: const Duration(milliseconds: 100),
+          onAnimationComplete: (isOffstage) {
+            animationCompleteValue = isOffstage;
+            completeCallbackCount++;
+          },
+          child: const Text('Test'),
+        ),
+      ),
+    );
+
+    // Wait for initial animation to complete
+    await tester.pumpAndSettle();
+
+    // Reset counter after initial build
+    final initialCount = completeCallbackCount;
+
+    // Change to offstage
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SOffstage(
+          isOffstage: true,
+          fadeDuration: const Duration(milliseconds: 100),
+          onAnimationComplete: (isOffstage) {
+            animationCompleteValue = isOffstage;
+            completeCallbackCount++;
+          },
+          child: const Text('Test'),
+        ),
+      ),
+    );
+
+    // Wait for animation to complete
+    await tester.pumpAndSettle();
+
+    // Should have triggered completion callback
+    expect(completeCallbackCount, greaterThan(initialCount));
+    expect(animationCompleteValue, true);
+
+    // Change back to visible
+    final beforeVisible = completeCallbackCount;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SOffstage(
+          isOffstage: false,
+          fadeDuration: const Duration(milliseconds: 100),
+          onAnimationComplete: (isOffstage) {
+            animationCompleteValue = isOffstage;
+            completeCallbackCount++;
+          },
+          child: const Text('Test'),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    // Should have triggered completion callback again
+    expect(completeCallbackCount, greaterThan(beforeVisible));
+    expect(animationCompleteValue, false);
+  });
+
+  testWidgets('SOffstage respects different transition types',
+      (WidgetTester tester) async {
+    // Test fade transition
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SOffstage(
+          isOffstage: false,
+          transition: SOffstageTransition.fade,
+          child: const Text('Fade Test'),
+        ),
+      ),
+    );
+
+    expect(find.text('Fade Test'), findsOneWidget);
+
+    // Test scale transition
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SOffstage(
+          isOffstage: false,
+          transition: SOffstageTransition.scale,
+          child: const Text('Scale Test'),
+        ),
+      ),
+    );
+
+    expect(find.text('Scale Test'), findsOneWidget);
+
+    // Test slide transition
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SOffstage(
+          isOffstage: false,
+          transition: SOffstageTransition.slide,
+          child: const Text('Slide Test'),
+        ),
+      ),
+    );
+
+    expect(find.text('Slide Test'), findsOneWidget);
+
+    // Test rotation transition
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SOffstage(
+          isOffstage: false,
+          transition: SOffstageTransition.rotation,
+          child: const Text('Rotation Test'),
+        ),
+      ),
+    );
+
+    expect(find.text('Rotation Test'), findsOneWidget);
+  });
+
+  testWidgets('SOffstage respects delay parameters',
+      (WidgetTester tester) async {
+    bool stateChanged = false;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SOffstage(
+          isOffstage: true,
+          delayBeforeShow: const Duration(milliseconds: 100),
+          child: const Text('Delayed Test'),
+        ),
+      ),
+    );
+
+    // Change to visible with delay
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SOffstage(
+          isOffstage: false,
+          delayBeforeShow: const Duration(milliseconds: 100),
+          onOffstageStateChanged: (isOffstage) {
+            stateChanged = true;
+          },
+          child: const Text('Delayed Test'),
+        ),
+      ),
+    );
+
+    // State should change immediately
+    expect(stateChanged, true);
+
+    // But animation should be delayed
+    await tester.pump(const Duration(milliseconds: 50));
+    // Still in transition
+    await tester.pump(const Duration(milliseconds: 60));
+    await tester.pumpAndSettle();
+
+    // Should now be visible
+    expect(find.text('Delayed Test'), findsOneWidget);
+  });
+
+  testWidgets('SOffstage respects custom animation curves',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SOffstage(
+          isOffstage: false,
+          fadeInCurve: Curves.bounceIn,
+          fadeOutCurve: Curves.easeOut,
+          child: const Text('Curve Test'),
+        ),
+      ),
+    );
+
+    expect(find.text('Curve Test'), findsOneWidget);
+
+    // Change state
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SOffstage(
+          isOffstage: true,
+          fadeInCurve: Curves.bounceIn,
+          fadeOutCurve: Curves.easeOut,
+          child: const Text('Curve Test'),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    expect(find.text('Curve Test'), findsNothing);
+  });
 }
