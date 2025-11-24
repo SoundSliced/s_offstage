@@ -45,7 +45,7 @@ class _ExampleHomeState extends State<ExampleHome> {
       _statusMessage =
           isOffstage ? 'Content is hidden (offstage)' : 'Content is visible!';
     });
-    print('Offstage state changed: $isOffstage');
+    debugPrint('Offstage state changed: $isOffstage');
   }
 
   void _handleAnimationComplete(bool isOffstage) {
@@ -54,7 +54,7 @@ class _ExampleHomeState extends State<ExampleHome> {
           ? 'Animation complete: Fully hidden'
           : 'Animation complete: Fully visible';
     });
-    print('Animation completed: $isOffstage');
+    debugPrint('Animation completed: $isOffstage');
   }
 
   @override
@@ -172,7 +172,7 @@ class _ExampleHomeState extends State<ExampleHome> {
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
+                            color: Colors.black.withValues(alpha: 0.1),
                             blurRadius: 10,
                             spreadRadius: 2,
                           ),
