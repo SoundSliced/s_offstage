@@ -1,3 +1,7 @@
+## 1.2.1
+
+* updated README
+
 ## 1.2.0
 
 * **Enhancement**: Improved exit animation logic to ensure smooth transitions when hiding content
