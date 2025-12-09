@@ -1,3 +1,11 @@
+## 1.2.0
+
+* **Enhancement**: Improved exit animation logic to ensure smooth transitions when hiding content
+* **Enhancement**: Updated example app with a modern single-page design
+* **Feature**: Added interactive toggles in example app for `showLoadingIndicator` and custom `loadingIndicator`
+* **Fix**: Resolved `setState` issues in example app by using `addPostFrameCallback`
+* **Documentation**: Updated README with comprehensive details on new features and example usage
+
 ## 1.1.0
 
 * **Major Feature Release**: Added comprehensive animation and transition system

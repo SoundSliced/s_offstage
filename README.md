@@ -1,7 +1,9 @@
-
 # s_offstage
 
 A Flutter package that provides smooth animated transitions for showing and hiding widgets using the `Offstage` widget. Unlike the `Visibility` widget which can hide widgets but still reserves their space, `SOffstage` completely removes widgets from the layout using `Offstage`, ensuring they take up no space and consume no resources when hidden.
+
+## Demo
+![Demo](https://raw.githubusercontent.com/SoundSliced/s_offstage/main/example/assets/example.gif)
 
 ## Key Features
 
@@ -34,7 +36,7 @@ Add this to your package's `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-  s_offstage: ^1.1.0
+  s_offstage: ^1.2.0
 ```
 
 
@@ -166,7 +168,7 @@ SOffstage(
 )
 ```
 
-See [`example/main.dart`](example/main.dart) for a complete runnable example:
+See [`example/lib/main.dart`](example/lib/main.dart) for a complete runnable example:
 
 ```dart
 import 'package:flutter/material.dart';
@@ -283,3 +285,17 @@ MIT License. See [LICENSE](LICENSE) for details.
 ## Repository
 
 https://github.com/SoundSliced/s_offstage
+
+## Interactive Example
+
+The package includes a comprehensive example app that demonstrates all features:
+- Toggle visibility to see entrance/exit animations
+- Switch between all transition types (Fade, Scale, Slide, Rotation)
+- Toggle the loading indicator on/off
+- Switch between default and custom loading indicators
+- View real-time status updates and callbacks
+
+To run the example:
+1. Clone the repository
+2. Go to the `example` folder
+3. Run `flutter run`

@@ -331,4 +331,68 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Curve Test'), findsNothing);
   });
+
+  testWidgets('SOffstage shows custom loading indicator',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SOffstage(
+          isOffstage: true,
+          showLoadingIndicator: true,
+          loadingIndicator: const Text('Custom Loading'),
+          child: const Text('Content'),
+        ),
+      ),
+    );
+
+    expect(find.text('Custom Loading'), findsOneWidget);
+    expect(find.text('Content'), findsNothing);
+  });
+
+  testWidgets('SOffstage respects showLoadingIndicator toggle',
+      (WidgetTester tester) async {
+    // Test with indicator hidden
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SOffstage(
+          isOffstage: true,
+          showLoadingIndicator: false,
+          child: const Text('Content'),
+        ),
+      ),
+    );
+
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    expect(find.text('Content'), findsNothing);
+
+    // Test with indicator shown
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SOffstage(
+          isOffstage: true,
+          showLoadingIndicator: true,
+          child: const Text('Content'),
+        ),
+      ),
+    );
+
+    // Note: SOffstage uses TickerFreeCircularProgressIndicator by default if no custom indicator is provided
+    // We need to check for that or just check that *something* is there if we can't easily import the type
+    // But since we can't easily import TickerFreeCircularProgressIndicator in the test without adding it to dev_dependencies or exporting it,
+    // let's just check that we find a widget that isn't the content.
+    // Actually, let's use a custom indicator to be sure.
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SOffstage(
+          isOffstage: true,
+          showLoadingIndicator: true,
+          loadingIndicator: const Text('Loading...'),
+          child: const Text('Content'),
+        ),
+      ),
+    );
+
+    expect(find.text('Loading...'), findsOneWidget);
+  });
 }

@@ -264,6 +264,7 @@ class SOffstage extends StatefulWidget {
 class _SOffstageState extends State<SOffstage>
     with SingleTickerProviderStateMixin {
   bool _actualOffstageState = false;
+  bool _effectiveOffstage = false;
   bool _showLoading = false;
   AnimationController? _animationController;
 
@@ -271,6 +272,7 @@ class _SOffstageState extends State<SOffstage>
   void initState() {
     super.initState();
     _actualOffstageState = widget.isOffstage;
+    _effectiveOffstage = widget.isOffstage;
     _showLoading =
         widget.isOffstage && widget.showLoadingAfter == Duration.zero;
 
@@ -298,6 +300,12 @@ class _SOffstageState extends State<SOffstage>
     if (status == AnimationStatus.completed ||
         status == AnimationStatus.dismissed) {
       widget.onAnimationComplete?.call(_actualOffstageState);
+
+      if (status == AnimationStatus.dismissed) {
+        setState(() {
+          _effectiveOffstage = true;
+        });
+      }
     }
   }
 
@@ -323,6 +331,7 @@ class _SOffstageState extends State<SOffstage>
           if (mounted) {
             setState(() {
               _actualOffstageState = widget.isOffstage;
+              _effectiveOffstage = false;
             });
             _updateAnimation();
           }
@@ -330,6 +339,7 @@ class _SOffstageState extends State<SOffstage>
       } else {
         setState(() {
           _actualOffstageState = widget.isOffstage;
+          _effectiveOffstage = false;
         });
         _updateAnimation();
       }
@@ -387,7 +397,7 @@ class _SOffstageState extends State<SOffstage>
 
   Widget _buildTransitionWidget() {
     Widget content = Offstage(
-      offstage: _actualOffstageState,
+      offstage: _effectiveOffstage,
       child: widget.child,
     );
 
