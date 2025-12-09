@@ -160,7 +160,7 @@
 		{
 			"label": "Kill Port 8082",
 			"type": "shell",
-			"command": "lsof -ti:8082 | xargs kill -9 || true; pkill -f \"Google Chrome\" || true; rm -rf .chrome-dev-profile",
+			"command": "lsof -ti:8082 | xargs kill -9 || true",
 			"presentation": {
 				"reveal": "silent",
 				"panel": "shared"

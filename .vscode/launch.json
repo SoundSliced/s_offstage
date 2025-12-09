@@ -7,7 +7,6 @@
             "type": "dart",
             "deviceId": "chrome",
             "flutterMode": "debug",
-            "preLaunchTask": "Kill Port 8082",
             "args": [
               "-d",
               "chrome",

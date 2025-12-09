@@ -1,3 +1,13 @@
+## 1.3.0
+
+* **Breaking Change**: Renamed `onOffstageStateChanged` to `onChanged` for brevity and consistency.
+* **Breaking Change**: Renamed `forceReveal` to `showRevealButton` for clarity.
+* **Enhancement**: Improved reveal button positioning logic:
+  * Centered when using default loader.
+  * Offset to top-right when using custom loader or custom hidden content to avoid obscuring content.
+* **Enhancement**: Made custom `hiddenContent` tappable when `showRevealButton` is true, with proper splash effects and visibility icon overlay.
+* **Fix**: Ensured splash effects are visible on custom hidden content by adjusting layer stacking.
+
 ## 1.2.1
 
 * updated README

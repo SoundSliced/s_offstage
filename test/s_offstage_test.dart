@@ -40,7 +40,7 @@ void main() {
           builder: (context, setState) {
             return SOffstage(
               isOffstage: false,
-              onOffstageStateChanged: (isOffstage) {
+              onChanged: (isOffstage) {
                 callbackValue = isOffstage;
                 callbackCount++;
               },
@@ -62,7 +62,7 @@ void main() {
           builder: (context, setState) {
             return SOffstage(
               isOffstage: true,
-              onOffstageStateChanged: (isOffstage) {
+              onChanged: (isOffstage) {
                 callbackValue = isOffstage;
                 callbackCount++;
               },
@@ -84,7 +84,7 @@ void main() {
           builder: (context, setState) {
             return SOffstage(
               isOffstage: false,
-              onOffstageStateChanged: (isOffstage) {
+              onChanged: (isOffstage) {
                 callbackValue = isOffstage;
                 callbackCount++;
               },
@@ -108,7 +108,7 @@ void main() {
       MaterialApp(
         home: SOffstage(
           isOffstage: false,
-          onOffstageStateChanged: (isOffstage) {
+          onChanged: (isOffstage) {
             callbackCount++;
           },
           child: const Text('Test'),
@@ -123,7 +123,7 @@ void main() {
       MaterialApp(
         home: SOffstage(
           isOffstage: false,
-          onOffstageStateChanged: (isOffstage) {
+          onChanged: (isOffstage) {
             callbackCount++;
           },
           child: const Text('Test'),
@@ -280,7 +280,7 @@ void main() {
         home: SOffstage(
           isOffstage: false,
           delayBeforeShow: const Duration(milliseconds: 100),
-          onOffstageStateChanged: (isOffstage) {
+          onChanged: (isOffstage) {
             stateChanged = true;
           },
           child: const Text('Delayed Test'),
@@ -394,5 +394,29 @@ void main() {
     );
 
     expect(find.text('Loading...'), findsOneWidget);
+  });
+
+  testWidgets('SOffstage shows reveal button when configured',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SOffstage(
+          isOffstage: true,
+          showRevealButton: true,
+          child: const Text('Content'),
+        ),
+      ),
+    );
+
+    // Should find the visibility icon
+    expect(find.byIcon(Icons.visibility), findsOneWidget);
+
+    // Tap it
+    await tester.tap(find.byIcon(Icons.visibility));
+    await tester.pumpAndSettle();
+
+    // Should now show content (and maybe the hide button)
+    expect(find.text('Content'), findsOneWidget);
+    expect(find.byIcon(Icons.visibility_off), findsOneWidget);
   });
 }

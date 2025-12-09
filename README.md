@@ -12,7 +12,7 @@ A Flutter package that provides smooth animated transitions for showing and hidi
 - **Smooth animations**: Automatically animates opacity and other effects when transitioning
 - **Advanced animation control**: Custom curves, delays, and completion callbacks
 - **Alternative to Visibility**: Provides similar functionality to `Visibility` but with smooth transitions
-- **Customizable**: Optional loading indicators with conditional display
+- **Customizable**: Optional loading indicators, hidden content placeholders, and reveal buttons
 - **Zero layout space**: Hidden widgets take up no space in the layout (unlike `Opacity` alone)
 - **State callbacks**: Track visibility changes and animation completion
 
@@ -36,7 +36,7 @@ Add this to your package's `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-  s_offstage: ^1.2.1
+  s_offstage: ^1.3.0
 ```
 
 
@@ -127,7 +127,7 @@ SOffstage(
 SOffstage(
   isOffstage: isLoading,
   // Called when visibility state changes
-  onOffstageStateChanged: (isOffstage) {
+  onChanged: (isOffstage) {
     print('Widget is now ${isOffstage ? 'hidden' : 'visible'}');
   },
   // Called when animation completes
@@ -151,6 +151,23 @@ SOffstage(
   loadingIndicator: CircularProgressIndicator(
     color: Colors.blue,
   ),
+  child: YourContentWidget(),
+)
+```
+
+### Hidden Content & Reveal Button
+
+Instead of a loading indicator, you can show a placeholder widget when content is offstage:
+
+```dart
+SOffstage(
+  isOffstage: isHidden,
+  // Show a placeholder instead of a loader
+  showHiddenContent: true,
+  // Optional: Custom placeholder widget
+  hiddenContent: Text('Content is hidden'),
+  // Add a button to toggle visibility manually
+  showRevealButton: true,
   child: YourContentWidget(),
 )
 ```
@@ -257,12 +274,17 @@ class _ExampleHomeState extends State<ExampleHome> {
 - `showLoadingIndicator`: Whether to show loading indicator (default: true)
 - `loadingIndicator`: Custom loading indicator widget (optional)
 
+#### Hidden Content & Reveal
+- `showHiddenContent`: Show a placeholder instead of loading indicator (default: false)
+- `hiddenContent`: Custom widget to show when hidden (optional)
+- `showRevealButton`: Show a toggle button to reveal/hide content (default: false)
+
 #### State Management
 - `maintainState`: Preserve widget state when offstage (default: false)
 - `maintainAnimation`: Keep animations running when offstage (default: false)
 
 #### Callbacks
-- `onOffstageStateChanged`: Called when visibility state changes
+- `onChanged`: Called when visibility state changes
 - `onAnimationComplete`: Called when transition animation completes
 
 ### SOffstageTransition Enum
@@ -271,10 +293,6 @@ class _ExampleHomeState extends State<ExampleHome> {
 - `SOffstageTransition.fadeAndScale`: Both fade and scale (default)
 - `SOffstageTransition.slide`: Slide with fade
 - `SOffstageTransition.rotation`: Rotation with fade
-
-### Additional Widgets
-
-- `HiddenContent`: A specialized widget for hiding/revealing content with optional force reveal functionality and custom indicators
 
 
 ## License

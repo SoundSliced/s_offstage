@@ -106,13 +106,13 @@ class SOffstage extends StatefulWidget {
   /// ```dart
   /// SOffstage(
   ///   isOffstage: isLoading,
-  ///   onOffstageStateChanged: (isOffstage) {
+  ///   onChanged: (isOffstage) {
   ///     print('Widget is now ${isOffstage ? 'hidden' : 'visible'}');
   ///   },
   ///   child: YourContentWidget(),
   /// )
   /// ```
-  final void Function(bool isOffstage)? onOffstageStateChanged;
+  final void Function(bool isOffstage)? onChanged;
 
   /// A callback that is triggered when the fade animation completes.
   ///
@@ -231,6 +231,27 @@ class SOffstage extends StatefulWidget {
   /// Defaults to 0.3 for a subtle slide effect.
   final double slideOffset;
 
+  /// Whether to show the hidden content placeholder when offstage.
+  ///
+  /// If `true`, the [hiddenContent] (or a default placeholder) will be shown
+  /// instead of the [loadingIndicator] when the widget is offstage.
+  /// This is useful for scenarios where you want to indicate that content is
+  /// hidden rather than loading.
+  final bool showHiddenContent;
+
+  /// A custom widget to display when [showHiddenContent] is true and the widget is offstage.
+  ///
+  /// If null, a default "Content Hidden" placeholder will be used.
+  final Widget? hiddenContent;
+
+  /// Whether to show a reveal/hide button overlay.
+  ///
+  /// If `true`:
+  /// - When content is visible, shows a 'visibility_off' icon to hide it.
+  /// - When content is hidden, shows a 'visibility' icon to reveal it (if using default hidden content).
+  /// - Tapping the icon toggles the offstage state.
+  final bool showRevealButton;
+
   /// Creates a [SOffstage] widget.
   ///
   /// The [isOffstage] and [child] parameters are required.
@@ -242,7 +263,7 @@ class SOffstage extends StatefulWidget {
     required this.child,
     this.showLoadingIndicator = true,
     this.loadingIndicator,
-    this.onOffstageStateChanged,
+    this.onChanged,
     this.onAnimationComplete,
     this.fadeInCurve = Curves.easeInOut,
     this.fadeOutCurve = Curves.easeInOut,
@@ -250,11 +271,14 @@ class SOffstage extends StatefulWidget {
     this.delayBeforeShow = Duration.zero,
     this.delayBeforeHide = Duration.zero,
     this.showLoadingAfter = Duration.zero,
-    this.maintainState = false,
+    this.maintainState = true,
     this.maintainAnimation = false,
     this.transition = SOffstageTransition.fadeAndScale,
     this.slideDirection = AxisDirection.down,
     this.slideOffset = 0.3,
+    this.showHiddenContent = false,
+    this.hiddenContent,
+    this.showRevealButton = false,
   });
 
   @override
@@ -265,6 +289,7 @@ class _SOffstageState extends State<SOffstage>
     with SingleTickerProviderStateMixin {
   bool _actualOffstageState = false;
   bool _effectiveOffstage = false;
+  bool _loaderOffstage = false;
   bool _showLoading = false;
   AnimationController? _animationController;
 
@@ -273,6 +298,7 @@ class _SOffstageState extends State<SOffstage>
     super.initState();
     _actualOffstageState = widget.isOffstage;
     _effectiveOffstage = widget.isOffstage;
+    _loaderOffstage = !widget.isOffstage;
     _showLoading =
         widget.isOffstage && widget.showLoadingAfter == Duration.zero;
 
@@ -284,10 +310,12 @@ class _SOffstageState extends State<SOffstage>
 
     _animationController!.addStatusListener(_onAnimationStatusChanged);
 
-    if (!widget.isOffstage) {
+    if (!_shouldBeOffstage) {
       _animationController!.value = 1.0;
     }
   }
+
+  bool get _shouldBeOffstage => widget.isOffstage;
 
   @override
   void dispose() {
@@ -304,6 +332,12 @@ class _SOffstageState extends State<SOffstage>
       if (status == AnimationStatus.dismissed) {
         setState(() {
           _effectiveOffstage = true;
+          _loaderOffstage = false;
+        });
+      } else if (status == AnimationStatus.completed) {
+        setState(() {
+          _effectiveOffstage = false;
+          _loaderOffstage = true;
         });
       }
     }
@@ -319,35 +353,37 @@ class _SOffstageState extends State<SOffstage>
     }
 
     // Trigger callback when offstage state changes
-    if (oldWidget.isOffstage != widget.isOffstage) {
-      widget.onOffstageStateChanged?.call(widget.isOffstage);
+    final bool oldShouldBeOffstage = oldWidget.isOffstage;
+    final bool newShouldBeOffstage = _shouldBeOffstage;
+
+    if (oldShouldBeOffstage != newShouldBeOffstage) {
+      widget.onChanged?.call(newShouldBeOffstage);
 
       // Handle delays
       final delay =
-          widget.isOffstage ? widget.delayBeforeHide : widget.delayBeforeShow;
+          newShouldBeOffstage ? widget.delayBeforeHide : widget.delayBeforeShow;
+
+      void updateState() {
+        if (mounted) {
+          setState(() {
+            _actualOffstageState = newShouldBeOffstage;
+            _effectiveOffstage = false;
+            _loaderOffstage = false;
+          });
+          _updateAnimation();
+        }
+      }
 
       if (delay > Duration.zero) {
-        Future.delayed(delay, () {
-          if (mounted) {
-            setState(() {
-              _actualOffstageState = widget.isOffstage;
-              _effectiveOffstage = false;
-            });
-            _updateAnimation();
-          }
-        });
+        Future.delayed(delay, updateState);
       } else {
-        setState(() {
-          _actualOffstageState = widget.isOffstage;
-          _effectiveOffstage = false;
-        });
-        _updateAnimation();
+        updateState();
       }
 
       // Handle conditional loading indicator
-      if (widget.isOffstage && widget.showLoadingAfter > Duration.zero) {
+      if (newShouldBeOffstage && widget.showLoadingAfter > Duration.zero) {
         Future.delayed(widget.showLoadingAfter, () {
-          if (mounted && widget.isOffstage) {
+          if (mounted && newShouldBeOffstage) {
             setState(() {
               _showLoading = true;
             });
@@ -355,7 +391,7 @@ class _SOffstageState extends State<SOffstage>
         });
       } else {
         setState(() {
-          _showLoading = widget.isOffstage;
+          _showLoading = newShouldBeOffstage;
         });
       }
     }
@@ -369,6 +405,24 @@ class _SOffstageState extends State<SOffstage>
     }
   }
 
+  void _toggleVisibility() {
+    setState(() {
+      _actualOffstageState = !_actualOffstageState;
+      // If we are becoming visible (not offstage), we need to ensure effective offstage is false immediately
+      // so animation can play.
+      if (!_actualOffstageState) {
+        _effectiveOffstage = false;
+      } else {
+        // If we are becoming hidden (offstage), we need to ensure loader is visible immediately
+        // so animation can play.
+        _loaderOffstage = false;
+        _showLoading = true;
+      }
+    });
+    _updateAnimation();
+    widget.onChanged?.call(_actualOffstageState);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Sizer(
@@ -376,62 +430,224 @@ class _SOffstageState extends State<SOffstage>
         return Stack(
           alignment: Alignment.center,
           children: [
-            // Loading indicator - shown based on showLoadingAfter delay
-            if (widget.showLoadingIndicator && _showLoading)
-              Center(
-                child: widget.loadingIndicator ??
-                    TickerFreeCircularProgressIndicator(
-                      // Custom styling for better visual hierarchy
-                      color: Colors.grey[700]!,
-                      backgroundColor: Colors.grey[200],
-                    ),
+            // 1. Child Content
+            _TransitionContainer(
+              isVisible: !_actualOffstageState,
+              offstage: _effectiveOffstage,
+              maintainState: widget.maintainState,
+              transition: widget.transition,
+              fadeDuration: widget.fadeDuration,
+              fadeInCurve: widget.fadeInCurve,
+              fadeOutCurve: widget.fadeOutCurve,
+              scaleCurve: widget.scaleCurve,
+              slideDirection: widget.slideDirection,
+              slideOffset: widget.slideOffset,
+              child: widget.child,
+            ),
+
+            // 2. Alternative Content (Loader / HiddenContent)
+            if (_showLoading &&
+                (widget.showLoadingIndicator || widget.showHiddenContent))
+              _TransitionContainer(
+                isVisible: _actualOffstageState,
+                offstage: _loaderOffstage,
+                maintainState: false,
+                transition: widget.transition,
+                fadeDuration: widget.fadeDuration,
+                fadeInCurve: widget.fadeInCurve,
+                fadeOutCurve: widget.fadeOutCurve,
+                scaleCurve: widget.scaleCurve,
+                slideDirection: widget.slideDirection,
+                slideOffset: widget.slideOffset,
+                child: _buildAlternativeContent(),
               ),
 
-            // Content container with transition animations
-            _buildTransitionWidget(),
+            // 3. Reveal Button Overlay
+            if (widget.showRevealButton) _buildRevealButtonOverlay(),
           ],
         );
       },
     );
   }
 
-  Widget _buildTransitionWidget() {
-    Widget content = Offstage(
-      offstage: _effectiveOffstage,
-      child: widget.child,
+  Widget _buildAlternativeContent() {
+    if (widget.showHiddenContent) {
+      if (widget.hiddenContent != null) {
+        if (widget.showRevealButton) {
+          return Stack(
+            alignment: Alignment.center,
+            children: [
+              // The custom hidden content with an overlayed reveal button
+              widget.hiddenContent!,
+
+              // The reveal button InkWell button and effect
+              Positioned.fill(
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    splashColor: Colors.blue.withValues(alpha: 0.1),
+                    highlightColor: Colors.blue.withValues(alpha: 0.1),
+                    hoverColor: Colors.blue.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(8),
+                    onTap: _toggleVisibility,
+                  ),
+                ),
+              ),
+
+              // The visibility icon in the top-right corner
+              Positioned(
+                top: 4,
+                right: 4,
+                child: IgnorePointer(
+                  child: Icon(
+                    Icons.visibility,
+                    color: Colors.green.shade600,
+                    size: 20,
+                  ),
+                ),
+              ),
+            ],
+          );
+        }
+        return widget.hiddenContent!;
+      }
+      return _DefaultHiddenContent(
+        showRevealButton: widget.showRevealButton,
+        onTap: widget.showRevealButton ? _toggleVisibility : null,
+      );
+    }
+    return widget.loadingIndicator ??
+        TickerFreeCircularProgressIndicator(
+          color: Colors.grey[700]!,
+          backgroundColor: Colors.grey[200],
+        );
+  }
+
+  Widget _buildRevealButtonOverlay() {
+    // If content is hidden (offstage) and we are using hidden content (default or custom),
+    // the reveal button is handled within _buildAlternativeContent, so we don't need an overlay.
+    if (_actualOffstageState && widget.showHiddenContent) {
+      return const SizedBox.shrink();
+    }
+
+    final button = Material(
+      color: Colors.transparent,
+      child: InkWell(
+        splashColor: Colors.blue.withValues(alpha: 0.1),
+        highlightColor: Colors.blue.withValues(alpha: 0.1),
+        hoverColor: Colors.blue.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(20),
+        onTap: _toggleVisibility,
+        child: Padding(
+          padding: const EdgeInsets.all(4.0),
+          child: Icon(
+            _actualOffstageState ? Icons.visibility : Icons.visibility_off,
+            color: _actualOffstageState
+                ? Colors.green.shade600
+                : Colors.red.shade900.withValues(alpha: 0.8),
+            size: 20,
+          ),
+        ),
+      ),
     );
 
-    // Apply transitions based on type
-    switch (widget.transition) {
+    // If hidden (and not using hidden content, i.e. using loader), we center the reveal button
+    // to align with the loader.
+    // If using a custom loader, we offset it slightly to the top-right
+    // so it doesn't obscure the center of the loader.
+    // If using the default loader, we keep it centered.
+    if (_actualOffstageState) {
+      final bool isCustomLoader = widget.loadingIndicator != null;
+
+      if (isCustomLoader) {
+        return Transform.translate(
+          offset: const Offset(40, -40),
+          child: button,
+        );
+      }
+      return button;
+    }
+
+    // If visible, we position the hide button in the top-right corner
+    // to avoid obstructing the content.
+    return Positioned(
+      top: 4,
+      right: 4,
+      child: button,
+    );
+  }
+}
+
+//****************//
+
+class _TransitionContainer extends StatelessWidget {
+  final bool offstage;
+  final bool maintainState;
+  final Widget child;
+  final SOffstageTransition transition;
+  final bool isVisible;
+  final Duration fadeDuration;
+  final Curve fadeInCurve;
+  final Curve fadeOutCurve;
+  final Curve scaleCurve;
+  final AxisDirection slideDirection;
+  final double slideOffset;
+
+  const _TransitionContainer({
+    required this.offstage,
+    required this.maintainState,
+    required this.child,
+    required this.transition,
+    required this.isVisible,
+    required this.fadeDuration,
+    required this.fadeInCurve,
+    required this.fadeOutCurve,
+    required this.scaleCurve,
+    required this.slideDirection,
+    required this.slideOffset,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final Widget childToRender =
+        (offstage && !maintainState) ? const SizedBox.shrink() : child;
+
+    Widget content = Offstage(
+      offstage: offstage,
+      child: childToRender,
+    );
+
+    final double targetOpacity = isVisible ? 1.0 : 0.0;
+    final Curve opacityCurve = isVisible ? fadeInCurve : fadeOutCurve;
+
+    switch (transition) {
       case SOffstageTransition.fade:
         content = AnimatedOpacity(
-          curve:
-              _actualOffstageState ? widget.fadeOutCurve : widget.fadeInCurve,
-          duration: widget.fadeDuration,
-          opacity: _actualOffstageState ? 0.0 : 1.0,
+          curve: opacityCurve,
+          duration: fadeDuration,
+          opacity: targetOpacity,
           child: content,
         );
         break;
 
       case SOffstageTransition.scale:
         content = AnimatedScale(
-          scale: _actualOffstageState ? 0.97 : 1.0,
-          duration: widget.fadeDuration,
-          curve: widget.scaleCurve,
+          scale: isVisible ? 1.0 : 0.97,
+          duration: fadeDuration,
+          curve: scaleCurve,
           child: content,
         );
         break;
 
       case SOffstageTransition.fadeAndScale:
         content = AnimatedScale(
-          scale: _actualOffstageState ? 0.97 : 1.0,
-          duration: widget.fadeDuration,
-          curve: widget.scaleCurve,
+          scale: isVisible ? 1.0 : 0.97,
+          duration: fadeDuration,
+          curve: scaleCurve,
           child: AnimatedOpacity(
-            curve:
-                _actualOffstageState ? widget.fadeOutCurve : widget.fadeInCurve,
-            duration: widget.fadeDuration,
-            opacity: _actualOffstageState ? 0.0 : 1.0,
+            curve: opacityCurve,
+            duration: fadeDuration,
+            opacity: targetOpacity,
             child: content,
           ),
         );
@@ -439,16 +655,15 @@ class _SOffstageState extends State<SOffstage>
 
       case SOffstageTransition.slide:
         content = AnimatedSlide(
-          offset: _actualOffstageState
-              ? _getSlideOffset(widget.slideDirection, widget.slideOffset)
-              : Offset.zero,
-          duration: widget.fadeDuration,
-          curve: widget.scaleCurve,
+          offset: isVisible
+              ? Offset.zero
+              : _getSlideOffset(slideDirection, slideOffset),
+          duration: fadeDuration,
+          curve: scaleCurve,
           child: AnimatedOpacity(
-            curve:
-                _actualOffstageState ? widget.fadeOutCurve : widget.fadeInCurve,
-            duration: widget.fadeDuration,
-            opacity: _actualOffstageState ? 0.0 : 1.0,
+            curve: opacityCurve,
+            duration: fadeDuration,
+            opacity: targetOpacity,
             child: content,
           ),
         );
@@ -456,14 +671,13 @@ class _SOffstageState extends State<SOffstage>
 
       case SOffstageTransition.rotation:
         content = AnimatedRotation(
-          turns: _actualOffstageState ? 0.05 : 0.0,
-          duration: widget.fadeDuration,
-          curve: widget.scaleCurve,
+          turns: isVisible ? 0.0 : 0.05,
+          duration: fadeDuration,
+          curve: scaleCurve,
           child: AnimatedOpacity(
-            curve:
-                _actualOffstageState ? widget.fadeOutCurve : widget.fadeInCurve,
-            duration: widget.fadeDuration,
-            opacity: _actualOffstageState ? 0.0 : 1.0,
+            curve: opacityCurve,
+            duration: fadeDuration,
+            opacity: targetOpacity,
             child: content,
           ),
         );
@@ -487,125 +701,71 @@ class _SOffstageState extends State<SOffstage>
   }
 }
 
-//************************************ */
+//****************//
 
-class HiddenContent extends StatefulWidget {
-  final bool forceReveal;
-  final bool isHidden;
-  final Widget child;
-  const HiddenContent({
-    super.key,
-    this.forceReveal = false,
-    this.isHidden = false,
-    required this.child,
+/// A default placeholder widget shown when content is hidden and no custom
+/// [hiddenContent] is provided.
+///
+/// Displays a "Content Hidden" message with an icon. If [showRevealButton] is enabled,
+/// tapping this widget will toggle the visibility.
+class _DefaultHiddenContent extends StatelessWidget {
+  final bool showRevealButton;
+  final VoidCallback? onTap;
+
+  const _DefaultHiddenContent({
+    required this.showRevealButton,
+    this.onTap,
   });
 
   @override
-  State<HiddenContent> createState() => _HiddenContentState();
-}
-
-class _HiddenContentState extends State<HiddenContent> {
-  bool _isHidden = false;
-
-  @override
-  void didUpdateWidget(covariant HiddenContent oldWidget) {
-    super.didUpdateWidget(oldWidget);
-
-    bool shouldSetState = false;
-
-    if (oldWidget.isHidden != widget.isHidden) {
-      _isHidden = widget.isHidden;
-      shouldSetState = true;
-    }
-
-    if (oldWidget.forceReveal != widget.forceReveal ||
-        oldWidget.child != widget.child) {
-      shouldSetState = true;
-    }
-
-    if (shouldSetState) {
-      setState(() {});
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        SOffstage(
-          isOffstage: widget.forceReveal && _isHidden
-              ? true
-              : widget.forceReveal && !_isHidden
-                  ? false
-                  : widget.isHidden,
-          loadingIndicator: Center(
-            child: IgnorePointer(
-              ignoring: !widget.forceReveal,
-              child: GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _isHidden = !_isHidden;
-                  });
-                },
-                child: SizedBox(
-                  width: 150,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    spacing: 8,
-                    children: [
-                      Icon(
-                        Icons.visibility_off,
-                        color: Colors.grey.shade500,
-                        size: 20,
-                      ),
-                      Flexible(
-                        child: Text(
-                          "Content Hidden",
-                          style: TextStyle(
-                            color: Colors.grey.shade500,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w400,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-          child: widget.child,
+    final color = Colors.blue.withValues(alpha: 0.1);
+    return IgnorePointer(
+      ignoring: !showRevealButton,
+      child: Container(
+        height: 55,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
         ),
-
-        // Reveal button - only shown when content is hidden and forceReveal is true
-        if (widget.forceReveal /*  && !_isHidden */)
-          Positioned(
-            top: 4,
-            right: 4,
-            child: Center(
-              child: GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _isHidden = !_isHidden;
-                  });
-                },
-                child: Padding(
-                  padding: const EdgeInsets.all(4.0),
-                  child: Icon(
-                    !_isHidden ? Icons.visibility_off : Icons.visibility,
-                    color: !_isHidden
-                        ? Colors.red.shade900.withValues(alpha: 0.8)
-                        : Colors.green.shade600,
-                    size: 20,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            splashColor: color,
+            highlightColor: color,
+            hoverColor: color.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(8),
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.all(8),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                spacing: 4,
+                children: [
+                  if (showRevealButton)
+                    Icon(
+                      Icons.visibility,
+                      color: Colors.green.shade300,
+                      size: 15,
+                    ),
+                  Flexible(
+                    child: Text(
+                      "Hidden Content",
+                      style: TextStyle(
+                        color: Colors.grey.shade500,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w400,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
             ),
           ),
-      ],
+        ),
+      ),
     );
   }
 }
