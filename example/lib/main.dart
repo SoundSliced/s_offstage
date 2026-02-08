@@ -1,5 +1,4 @@
 // This example app shows how to use the s_offstage package.
-import 'package:flutter/material.dart';
 import 'package:s_offstage/s_offstage.dart';
 
 void main() => runApp(const MyApp());
