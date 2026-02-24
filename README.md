@@ -36,7 +36,7 @@ Add this to your package's `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-  s_offstage: ^2.0.1
+  s_offstage: ^2.1.0
 ```
 
 
