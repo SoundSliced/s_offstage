@@ -1,3 +1,6 @@
+## [3.0.0]
+- `s_packages` dependency upgraded to ^3.0.0
+
 ## 2.1.0
 - Removed the internal `Sizer` wrapper from `SOffstage` to avoid forcing an extra layout context around the widget tree.
 - Improved scale-only transitions: hidden state now scales to `0.0` (instead of `0.97`) for a cleaner and fully smooth disappearance at animation end.
